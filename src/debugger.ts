@@ -48,12 +48,10 @@ export class NoirDebugAdapterDescriptorFactory implements DebugAdapterDescriptor
 
 class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
   async resolveDebugConfiguration(
-    folder: WorkspaceFolder | undefined,
-    config: DebugConfiguration,
+    _folder: WorkspaceFolder | undefined,
+    _config: DebugConfiguration,
     _token?: CancellationToken,
   ): ProviderResult<DebugConfiguration> {
-    if (config.program || config.request == 'attach') return config;
-
     if (window.activeTextEditor?.document.languageId != 'noir')
       return window.showInformationMessage(`Select a Noir file to debug`);
 
