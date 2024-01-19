@@ -49,19 +49,35 @@ export class NoirDebugAdapterDescriptorFactory implements DebugAdapterDescriptor
 class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
   async resolveDebugConfiguration(
     _folder: WorkspaceFolder | undefined,
-    _config: DebugConfiguration,
+    config: DebugConfiguration,
     _token?: CancellationToken,
   ): ProviderResult<DebugConfiguration> {
     if (window.activeTextEditor?.document.languageId != 'noir')
       return window.showInformationMessage(`Select a Noir file to debug`);
 
-    const currentFilePath = window.activeTextEditor.document.uri.fsPath;
-    const currentProjectFolder = findNearestPackageFrom(currentFilePath);
-
     const workspaceConfig = workspace.getConfiguration('noir');
     const nargoPath = workspaceConfig.get<string | undefined>('nargoPath') || findNargo();
 
+    const currentFilePath = window.activeTextEditor.document.uri.fsPath;
+    const projectFolder =
+      config.projectFolder && config.projectFolder !== ``
+        ? config.projectFolder
+        : findNearestPackageFrom(currentFilePath);
+
+    const resolvedConfig = {
+      type: config.type || 'noir',
+      name: config.name || 'Noir binary package',
+      request: 'launch',
+      program: currentFilePath,
+      projectFolder,
+      package: config.package || ``,
+      proverName: config.proverName || `Prover`,
+      generateAcir: config.generateAcir || false,
+      skipInstrumentation: config.skipInstrumentation || false,
+    };
+
     outputChannel.clear();
+
     outputChannel.appendLine(`Using nargo at ${nargoPath}`);
     outputChannel.appendLine(`Compiling Noir project...`);
     outputChannel.appendLine(``);
@@ -71,12 +87,29 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
     // This lets us gracefully handle errors that happen *before*
     // the DAP loop is established, which otherwise are considered
     // "out of band".
-    const preflightCheck = spawn(nargoPath, [
+    const preflightArgs = [
       'dap',
       '--preflight-check',
       '--preflight-project-folder',
-      currentProjectFolder,
-    ]);
+      resolvedConfig.projectFolder,
+      '--preflight-prover-name',
+      resolvedConfig.proverName,
+    ];
+
+    if (resolvedConfig.package !== ``) {
+      preflightArgs.push(`--preflight-package`);
+      preflightArgs.push(config.package);
+    }
+
+    if (resolvedConfig.generateAcir) {
+      preflightArgs.push(`--preflight-generate-acir`);
+    }
+
+    if (resolvedConfig.skipInstrumentation) {
+      preflightArgs.push(`--preflight-skip-instrumentation`);
+    }
+
+    const preflightCheck = spawn(nargoPath, preflightArgs);
 
     // Create a promise to block until the preflight check child process
     // ends.
@@ -100,13 +133,7 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
       outputChannel.appendLine(`Starting debugger session...`);
     }
 
-    return {
-      type: 'noir',
-      name: 'Noir binary package',
-      request: 'launch',
-      program: currentFilePath,
-      projectFolder: currentProjectFolder,
-    };
+    return resolvedConfig;
   }
 }
 
