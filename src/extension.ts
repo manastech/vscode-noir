@@ -34,7 +34,7 @@ import {
   TaskPanelKind,
   TaskGroup,
   ProcessExecution,
-  ProgressLocation,  
+  ProgressLocation,
 } from 'vscode';
 
 import { activateDebugger } from './debugger';
@@ -45,8 +45,6 @@ import findNargo from './find-nargo';
 import { lspClients, editorLineDecorationManager } from './noir';
 
 const activeCommands: Map<string, Disposable> = new Map();
-
-let outputChannel: OutputChannel;
 
 const activeMutex: Set<string> = new Set();
 

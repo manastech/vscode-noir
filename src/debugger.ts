@@ -27,7 +27,7 @@ export function activateDebugger(context: ExtensionContext) {
     debug.registerDebugAdapterDescriptorFactory('noir', new NoirDebugAdapterDescriptorFactory()),
     debug.registerDebugConfigurationProvider('noir', new NoirDebugConfigurationProvider()),
     debug.onDidTerminateDebugSession(() => {
-      outputChannel.appendLine("Debug session ended.");
+      outputChannel.appendLine(`Debug session ended.`);
     }),
   );
 }
@@ -47,23 +47,26 @@ export class NoirDebugAdapterDescriptorFactory implements DebugAdapterDescriptor
 }
 
 class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
-  async resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
-    if (config.program || config.request == 'attach')
-      return config;
+  async resolveDebugConfiguration(
+    folder: WorkspaceFolder | undefined,
+    config: DebugConfiguration,
+    _token?: CancellationToken,
+  ): ProviderResult<DebugConfiguration> {
+    if (config.program || config.request == 'attach') return config;
 
     if (window.activeTextEditor?.document.languageId != 'noir')
-      return window.showInformationMessage("Select a Noir file to debug");
+      return window.showInformationMessage(`Select a Noir file to debug`);
 
     const currentFilePath = window.activeTextEditor.document.uri.fsPath;
-    let currentProjectFolder = findNearestPackageFrom(currentFilePath);
+    const currentProjectFolder = findNearestPackageFrom(currentFilePath);
 
     const workspaceConfig = workspace.getConfiguration('noir');
     const nargoPath = workspaceConfig.get<string | undefined>('nargoPath') || findNargo();
 
     outputChannel.clear();
     outputChannel.appendLine(`Using nargo at ${nargoPath}`);
-    outputChannel.appendLine("Compiling Noir project...");
-    outputChannel.appendLine("");
+    outputChannel.appendLine(`Compiling Noir project...`);
+    outputChannel.appendLine(``);
 
     // Run Nargo's DAP in "pre-flight mode", which test runs
     // the DAP initialization code without actually starting the DAP server.
@@ -74,29 +77,29 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
       'dap',
       '--preflight-check',
       '--preflight-project-folder',
-      currentProjectFolder
+      currentProjectFolder,
     ]);
 
     // Create a promise to block until the preflight check child process
     // ends.
-    let ready: (r: Boolean) => void;
-    const preflightCheckMonitor = new Promise((resolve) => ready = resolve);
+    let ready: (r: boolean) => void;
+    const preflightCheckMonitor = new Promise((resolve) => (ready = resolve));
 
-    preflightCheck.stderr.on('data', ev_buffer => preflightCheckPrinter(ev_buffer, outputChannel));
-    preflightCheck.stdout.on('data', ev_buffer => preflightCheckPrinter(ev_buffer, outputChannel));
-    preflightCheck.on('data', ev_buffer => preflightCheckPrinter(ev_buffer, outputChannel));
-    preflightCheck.on('exit', async code => {
+    preflightCheck.stderr.on('data', (ev_buffer) => preflightCheckPrinter(ev_buffer, outputChannel));
+    preflightCheck.stdout.on('data', (ev_buffer) => preflightCheckPrinter(ev_buffer, outputChannel));
+    preflightCheck.on('data', (ev_buffer) => preflightCheckPrinter(ev_buffer, outputChannel));
+    preflightCheck.on('exit', async (code) => {
       if (code !== 0) {
         outputChannel.appendLine(`Exited with code ${code}`);
       }
       ready(code == 0);
     });
 
-    if (!await preflightCheckMonitor) {
+    if (!(await preflightCheckMonitor)) {
       outputChannel.show();
-      throw new Error("Error launching debugger. Please inspect the Output pane for more details.");
+      throw new Error(`Error launching debugger. Please inspect the Output pane for more details.`);
     } else {
-      outputChannel.appendLine("Starting debugger session...");
+      outputChannel.appendLine(`Starting debugger session...`);
     }
 
     return {
@@ -105,7 +108,7 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
       request: 'launch',
       program: currentFilePath,
       projectFolder: currentProjectFolder,
-    }
+    };
   }
 }
 
@@ -118,9 +121,11 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
  *
  */
 function preflightCheckPrinter(buffer: Buffer, output: OutputChannel) {
-  const formattedOutput = buffer.toString()
-        .replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '')
-        .replace(/[^ -~\n\t]/g, '');
+  const formattedOutput = buffer
+    .toString()
+    // eslint-disable-next-line no-control-regex
+    .replace(/\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '')
+    .replace(/[^ -~\n\t]/g, '');
 
   output.appendLine(formattedOutput);
 }
