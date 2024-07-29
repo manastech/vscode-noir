@@ -70,6 +70,7 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
       proverName: config.proverName || `Prover`,
       generateAcir: config.generateAcir || false,
       skipInstrumentation: config.skipInstrumentation || false,
+      testName: config.testName,
     };
 
     return resolvedConfig;
@@ -109,6 +110,11 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
     if (config.package !== ``) {
       preflightArgs.push(`--preflight-package`);
       preflightArgs.push(config.package);
+    }
+
+    if (config.testName !== ``) {
+      preflightArgs.push(`--preflight-test-name`);
+      preflightArgs.push(config.testName);
     }
 
     if (config.generateAcir) {
