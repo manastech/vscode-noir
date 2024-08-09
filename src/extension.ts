@@ -188,7 +188,7 @@ function registerCommands(uri: Uri) {
       name: 'Noir binary package',
       projectFolder: '${workspaceFolder}',
       proverName: 'Prover',
-      testName: testName,
+      ...(testName && { testName }),
     });
   });
   commands$.push(debugTestCommand$);
