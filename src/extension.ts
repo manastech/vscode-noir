@@ -173,7 +173,6 @@ function registerCommands(uri: Uri) {
   });
   commands$.push(hideProfileInformationCommand$);
   const debugCommand$ = commands.registerCommand('nargo.debug.dap', async (..._args) => {
-    // FIXME: should we change this to `debug.startDebugging` ?
     return commands.executeCommand('workbench.action.debug.start');
   });
 
