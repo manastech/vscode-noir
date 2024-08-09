@@ -70,7 +70,7 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
       proverName: config.proverName || `Prover`,
       generateAcir: config.generateAcir || false,
       skipInstrumentation: config.skipInstrumentation || false,
-      testName: config.testName,
+      testName: config.testName || '',
     };
 
     return resolvedConfig;
