@@ -180,6 +180,7 @@ function registerCommands(uri: Uri) {
   const debugTestCommand$ = commands.registerCommand('nargo.debug.test', async (...args) => {
     const exactIndex = args.indexOf('--exact');
     const testName = args.at(exactIndex + 1);
+    const oracleResolver = process.env["TXE_TARGET"];
     const workspaceFolder = workspace.getWorkspaceFolder(uri);
     await debug.startDebugging(workspaceFolder, {
       type: 'noir',
@@ -188,6 +189,7 @@ function registerCommands(uri: Uri) {
       projectFolder: '${workspaceFolder}',
       proverName: 'Prover',
       ...(testName && { testName }),
+      ...(oracleResolver && { oracleResolver }),
     });
   });
   commands$.push(debugTestCommand$);
