@@ -148,7 +148,7 @@ class NoirDebugConfigurationProvider implements DebugConfigurationProvider {
       throw new Error(`Error launching debugger. Please inspect the Output pane for more details.`);
     } else {
       outputChannel.appendLine(`Starting debugger session...`);
-      if(config.oracleResolver){
+      if (config.oracleResolver) {
         outputChannel.appendLine(`Using oracle resolver target ${config.oracleResolver}`);
       } else {
         outputChannel.appendLine(`No oracle resolver set`);
